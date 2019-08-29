@@ -1,9 +1,11 @@
 package com.neal.xposed.zfb.collectenergy
 
 import android.app.Activity
+import android.content.Context
+import android.net.Uri
 import android.text.TextUtils
+import android.util.Log
 import android.widget.Toast
-import com.neal.xposed.tools.pref.PreferenceUtils
 import de.robv.android.xposed.XC_MethodHook
 import org.json.JSONArray
 import org.json.JSONException
@@ -24,12 +26,12 @@ class AliMobileAutoCollectEnergyUtils {
                 add("2088202931109144")
             }
         }
-        private val sharedPreferences = PreferenceUtils.getInstance(TARGET_PACKAGE_NAME)
-        private var autoCollect = true
-        private var autoCollectGap: Long = 2000
-        private const val DEFAULT_COLLECT_DELAY = (1000 * 20).toLong()
+        private var autoCollectIntervalOpen = true
+        private var autoCollectOpen = true
+        private var autoCollectInterval: Long = 2000
+        private const val DEFAULT_COLLECT_DELAY = (1000 * 5).toLong()
+        var ctxRef: WeakReference<Context>? = null
 
-        var loader: ClassLoader? = null
         private var curH5PageImpl: Any? = null
         var curH5FragmentRef: WeakReference<Any>? = null
         private val collectData = ArrayList<CollectData>()
@@ -39,46 +41,91 @@ class AliMobileAutoCollectEnergyUtils {
         private var pageCount: Int = 0
         private var timer: Timer? = null
 
-        fun DiagnoseRpcHookParams(param: XC_MethodHook.MethodHookParam) {
-            val args = param.args
-            // Log.i(TAG, "params:" + args[0] + "," + args[1] + "," + args[2] + "," + args[3]
-            //                + "," + args[4] + "," + args[5] + "," + args[6] + "," + "H5" + "," + args[8]
-            //                + "," + args[9] + "," + args[10] + "," + args[11] + "," + args[12]);
-            val funcName = args[0] as String
-            val jsonArgs = args[1] as String
-            when (funcName) {
-                QUERY_FRIEND_RANKING -> if (parseFriendRankPageDataResponse(parseResponseData(param.result))) {
-                    rpcCall_QueryFriendRanking()
-                } else {
-                    showToast("开始获取每个好友能够偷取的能量信息...")
-                    for (data in collectData) {
-                        rpcCall_QueryFriendPage(data)
+        fun diagnoseRpcHookParams(param: XC_MethodHook.MethodHookParam) {
+            if (autoCollectOpen) {
+                val args = param.args
+                // Log.i(TAG, "params:" + args[0] + "," + args[1] + "," + args[2] + "," + args[3]
+                //                + "," + args[4] + "," + args[5] + "," + args[6] + "," + "H5" + "," + args[8]
+                //                + "," + args[9] + "," + args[10] + "," + args[11] + "," + args[12]);
+                val funcName = args[0] as String
+                val jsonArgs = args[1] as String
+                when (funcName) {
+                    QUERY_FRIEND_RANKING -> if (parseFriendRankPageDataResponse(
+                            parseResponseData(
+                                param.result
+                            )
+                        )
+                    ) {
+                        rpcCall_QueryFriendRanking()
+                    } else {
+                        showToast("开始获取每个好友能够偷取的能量信息...")
+                        for (data in collectData) {
+                            rpcCall_QueryFriendPage(data)
+                        }
+                        postCollect()
                     }
-                    postCollect()
-                }
-                QUERY_FRIEND_ACTION -> if (!jsonArgs.contains("userId")) {
-                    // 刚打开页面,请求不带userId,获取的是自己的数据
-                    reset()
-                    parseCollectBubbles(parseResponseData(param.result))
-                    rpcCall_QueryFriendRanking()
-                } else {
-                    // 其他用户的能量球信息
-                    parseCollectBubbles(parseResponseData(param.result))
-                }
-                HELP_COLLECT_ENERGY -> parseHelpCollectEnergyResponse(parseResponseData(param.result))
-                COLLECT_ENERGY -> parseCollectEnergyResponse(parseResponseData(param.result))
-                else -> {
+                    QUERY_FRIEND_ACTION -> if (!jsonArgs.contains("userId")) {
+                        // 刚打开页面,请求不带userId,获取的是自己的数据
+                        reset()
+                        parseCollectBubbles(parseResponseData(param.result))
+                        rpcCall_QueryFriendRanking()
+                    } else {
+                        // 其他用户的能量球信息
+                        parseCollectBubbles(parseResponseData(param.result))
+                    }
+                    HELP_COLLECT_ENERGY -> parseHelpCollectEnergyResponse(parseResponseData(param.result))
+                    COLLECT_ENERGY -> parseCollectEnergyResponse(parseResponseData(param.result))
+                    else -> {
+                    }
                 }
             }
         }
 
-        private fun reload() {
-            sharedPreferences.reload()
-            autoCollect = sharedPreferences.getBoolean("autoCollect", true)
-            autoCollectGap = sharedPreferences.getLong("autoCollectGap", DEFAULT_COLLECT_DELAY)
-            if (autoCollectGap < DEFAULT_COLLECT_DELAY) {
-                autoCollectGap = DEFAULT_COLLECT_DELAY
+        fun loadEnable() {
+            val ctx = ctxRef!!.get()
+            if (ctx != null) {
+                val uri =
+                    Uri.parse("content://com.neal.xposed.preference/xposed_settings?key=auto_collect_open")
+                val cursor = ctx.contentResolver.query(uri, null, null, null, null)
+                cursor?.moveToFirst()
+                if (cursor?.count ?: 0 > 0) {
+                    autoCollectOpen =
+                        cursor?.getString(cursor.getColumnIndex("value"))?.toBoolean() ?: true
+                }
+                cursor?.close()
+            } else {
+                autoCollectOpen = true
             }
+        }
+
+        private fun reload() {
+            Log.i(TAG, "reload")
+            val ctx = ctxRef!!.get()
+            if (ctx != null) {
+                val uri = Uri.parse("content://com.neal.xposed.preference/xposed_settings")
+                val cursor = ctx.contentResolver.query(uri, null, null, null, null)
+                while (cursor?.moveToNext() == true) {
+                    val key = cursor.getString(cursor.getColumnIndex("key"))
+                    val value = cursor.getString(cursor.getColumnIndex("value"))
+                    when (key) {
+                        "auto_collect_interval_open" -> autoCollectIntervalOpen =
+                            value?.toBoolean() ?: true
+                        "auto_collect_open" -> autoCollectOpen = value?.toBoolean() ?: true
+                        "auto_collect_interval" -> autoCollectInterval = value?.toLong() ?: 2000
+                    }
+                }
+                cursor?.close()
+            } else {
+                autoCollectInterval = DEFAULT_COLLECT_DELAY
+                autoCollectIntervalOpen = true
+                autoCollectOpen = true
+            }
+            if (autoCollectInterval < DEFAULT_COLLECT_DELAY) {
+                autoCollectInterval = DEFAULT_COLLECT_DELAY
+            }
+            Log.i(TAG, "autoCollectIntervalOpen:$autoCollectIntervalOpen")
+            Log.i(TAG, "autoCollectOpen:$autoCollectOpen")
+            Log.i(TAG, "autoCollectInterval:$autoCollectInterval")
         }
 
         private fun reset() {
@@ -96,18 +143,18 @@ class AliMobileAutoCollectEnergyUtils {
         private fun postCollect() {
             showToast("一共收取了" + totalEnergy + "g能量" + ",帮助收取了" + totalHelpEnergy + "g能量")
             reload()
-            if (autoCollect) {
+            if (autoCollectIntervalOpen) {
                 val currentTime = System.currentTimeMillis()
                 timer!!.schedule(object : TimerTask() {
                     override fun run() {
-                        showToast("下次收集时间:" + simpleDateFormat.format(Date(currentTime + 1000)))
+                        showToast("下次收集时间:" + simpleDateFormat.format(Date(currentTime + autoCollectInterval)))
                     }
                 }, 1000)
                 timer!!.schedule(object : TimerTask() {
                     override fun run() {
                         restartCollect()
                     }
-                }, autoCollectGap)
+                }, autoCollectInterval)
             }
         }
 
@@ -266,7 +313,8 @@ class AliMobileAutoCollectEnergyUtils {
         private fun rpcCall(funcName: String, jsonArrayString: String) {
             try {
                 val rpcCallMethod = getRpcCallMethod()
-                val jsonClazz = loader!!.loadClass("com.alibaba.fastjson.JSONObject")
+                val jsonClazz =
+                    ctxRef!!.get()!!.classLoader.loadClass("com.alibaba.fastjson.JSONObject")
                 val obj = jsonClazz.newInstance()
                 rpcCallMethod!!.invoke(
                     null, funcName, jsonArrayString,
@@ -336,10 +384,12 @@ class AliMobileAutoCollectEnergyUtils {
                     val hF = viewHolder.javaClass.getDeclaredField("h")
                     hF.isAccessible = true
                     curH5PageImpl = hF.get(viewHolder)
-                    val h5PageClazz = loader!!.loadClass("com.alipay.mobile.h5container.api.H5Page")
-                    val jsonClazz = loader!!.loadClass("com.alibaba.fastjson.JSONObject")
+                    val classLoader: ClassLoader = ctxRef!!.get()!!.classLoader
+                    val h5PageClazz =
+                        classLoader.loadClass("com.alipay.mobile.h5container.api.H5Page")
+                    val jsonClazz = classLoader.loadClass("com.alibaba.fastjson.JSONObject")
                     val rpcClazz =
-                        loader!!.loadClass("com.alipay.mobile.nebulaappproxy.api.rpc.H5RpcUtil")
+                        classLoader.loadClass("com.alipay.mobile.nebulaappproxy.api.rpc.H5RpcUtil")
                     if (curH5PageImpl != null) {
                         return rpcClazz.getMethod(
                             "rpcCall",

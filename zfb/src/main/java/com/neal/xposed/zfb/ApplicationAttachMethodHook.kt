@@ -9,17 +9,15 @@ import java.lang.ref.WeakReference
 
 class ApplicationAttachMethodHook : XC_MethodHook() {
     companion object {
-        var notFirst: Boolean = false
+        var TAG: String = "XposedHookZFB"
     }
 
     @Throws(Throwable::class)
     override fun afterHookedMethod(param: MethodHookParam) {
         super.afterHookedMethod(param)
-        if (notFirst)
-            return
         val context = param.args[0] as Context
         val loader = context.classLoader
-        AliMobileAutoCollectEnergyUtils.loader = loader
+        AliMobileAutoCollectEnergyUtils.ctxRef = WeakReference(context)
         val packageManager = context.packageManager
         val packageInfo = packageManager.getPackageInfo(context.packageName, 0)
         if (packageInfo.versionCode >= 135) {
@@ -44,15 +42,14 @@ class ApplicationAttachMethodHook : XC_MethodHook() {
                                 super.afterHookedMethod(param)
                                 AliMobileAutoCollectEnergyUtils.curH5FragmentRef =
                                     WeakReference(param!!.args[0])
+                                AliMobileAutoCollectEnergyUtils.loadEnable()
                             }
-
                         })
                 }
             }
 
             clazz = loader.loadClass("com.alipay.mobile.nebulaappproxy.api.rpc.H5RpcUtil")
             if (clazz != null) {
-                notFirst = true
                 val h5PageClazz = loader.loadClass("com.alipay.mobile.h5container.api.H5Page")
                 val jsonClazz = loader.loadClass("com.alibaba.fastjson.JSONObject")
                 if (h5PageClazz != null && jsonClazz != null) {
@@ -77,7 +74,7 @@ class ApplicationAttachMethodHook : XC_MethodHook() {
                             @Throws(Throwable::class)
                             override fun afterHookedMethod(param: MethodHookParam?) {
                                 super.afterHookedMethod(param)
-                                AliMobileAutoCollectEnergyUtils.DiagnoseRpcHookParams(param!!)
+                                AliMobileAutoCollectEnergyUtils.diagnoseRpcHookParams(param!!)
                             }
                         })
                 }
