@@ -35,7 +35,6 @@ class AliMobileAutoCollectEnergyUtils {
         private var curH5PageImpl: Any? = null
         var curH5FragmentRef: WeakReference<Any>? = null
         private val collectData = ArrayList<CollectData>()
-        private var mostRecentCollectTime = java.lang.Long.MAX_VALUE
         private var totalEnergy: Int = 0
         private var totalHelpEnergy: Int = 0
         private var pageCount: Int = 0
@@ -49,6 +48,7 @@ class AliMobileAutoCollectEnergyUtils {
                 //                + "," + args[9] + "," + args[10] + "," + args[11] + "," + args[12]);
                 val funcName = args[0] as String
                 val jsonArgs = args[1] as String
+                Log.d(TAG, "funcName:$funcName")
                 when (funcName) {
                     QUERY_FRIEND_RANKING -> if (parseFriendRankPageDataResponse(
                             parseResponseData(
@@ -56,6 +56,9 @@ class AliMobileAutoCollectEnergyUtils {
                             )
                         )
                     ) {
+                        val jsonArray = JSONArray(jsonArgs)
+                        val jsonObject: JSONObject = jsonArray.get(0) as JSONObject
+                        pageCount = jsonObject.getInt("pageSize") / 20 + 1
                         rpcCall_QueryFriendRanking()
                     } else {
                         showToast("开始获取每个好友能够偷取的能量信息...")
@@ -68,6 +71,7 @@ class AliMobileAutoCollectEnergyUtils {
                         // 刚打开页面,请求不带userId,获取的是自己的数据
                         reset()
                         parseCollectBubbles(parseResponseData(param.result))
+                        pageCount = 0
                         rpcCall_QueryFriendRanking()
                     } else {
                         // 其他用户的能量球信息
@@ -130,7 +134,6 @@ class AliMobileAutoCollectEnergyUtils {
 
         private fun reset() {
             collectData.clear()
-            mostRecentCollectTime = java.lang.Long.MAX_VALUE
             totalEnergy = 0
             totalHelpEnergy = 0
             pageCount = 0
@@ -160,10 +163,11 @@ class AliMobileAutoCollectEnergyUtils {
 
         private fun restartCollect() {
             try {
-                val jsonArray = JSONArray()
-                val json = JSONObject()
-                json.put("version", "20181220")
-                jsonArray.put(json)
+                val jsonArray = JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("version", "20181220")
+                    })
+                }
                 //            Log.i(TAG, "call restartCollect energy params:" + jsonArray);
                 rpcCall("alipay.antmember.forest.h5.queryNextAction", jsonArray.toString())
             } catch (e: JSONException) {
@@ -174,16 +178,18 @@ class AliMobileAutoCollectEnergyUtils {
 
         private fun rpcCall_QueryFriendRanking() {
             try {
-                val jsonArray = JSONArray()
-                val json = JSONObject()
-                json.put("av", "5")
-                json.put("ct", "android")
-                json.put("pageSize", pageCount!! * 20)
-                json.put("startPoint", "" + (pageCount!! * 20 + 1))
-                pageCount++
-                jsonArray.put(json)
-                showToast("开始获取可以收取第" + pageCount + "页好友信息的能量...")
-                // Log.i(TAG, "rpcCall_QueryFriendRanking params:" + jsonArray);
+                val jsonArray = JSONArray().apply {
+                    put(
+                        JSONObject().apply {
+                            put("av", "5")
+                            put("ct", "android")
+                            put("pageSize", pageCount * 20)
+                            put("startPoint", "" + (pageCount * 20 + 1))
+                        }
+                    )
+                }
+                showToast("开始获取可以收取第 ${pageCount + 1} 页好友信息的能量...")
+                Log.i(TAG, "rpcCall_QueryFriendRanking params:$jsonArray");
                 rpcCall(QUERY_FRIEND_RANKING, jsonArray.toString())
             } catch (e: Exception) {
                 // Log.i(TAG, "rpcCall_QueryFriendRanking err: " + Log.getStackTraceString(e));
@@ -193,29 +199,32 @@ class AliMobileAutoCollectEnergyUtils {
 
         private fun rpcCall_QueryFriendPage(data: CollectData) {
             try {
-                val jsonArray = JSONArray()
-                val json = JSONObject()
-                json.put("canRobFlags", data.robFlags)
-                json.put("userId", data.collectUserId)
-                json.put("version", "20181220")
-                jsonArray.put(json)
+                val jsonArray = JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("canRobFlags", data.robFlags)
+                        put("userId", data.collectUserId)
+                        put("version", "20181220")
+                    })
+                }
                 // Log.i(TAG, "call cancollect energy params:" + jsonArray);
 
                 rpcCall(QUERY_FRIEND_ACTION, jsonArray.toString())
 
-                val pkArray = JSONArray()
-                val pkObject = JSONObject()
-                pkObject.put("pkType", "Week")
-                pkObject.put("pkUser", data.collectUserId)
-                pkArray.put(pkObject)
+                val pkArray = JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("pkType", "Week")
+                        put("pkUser", data.collectUserId)
+                    })
+                }
                 rpcCall(QUERY_PK_RECORDS, pkArray.toString())
 
-                val jArray = JSONArray()
-                val jObject = JSONObject()
-                jObject.put("pageSize", 10)
-                jObject.put("startIndex", 0)
-                jObject.put("userId", data.collectUserId)
-                jArray.put(jObject)
+                val jArray = JSONArray().apply {
+                    JSONObject().apply {
+                        put("pageSize", 10)
+                        put("startIndex", 0)
+                        put("userId", data.collectUserId)
+                    }
+                }
                 rpcCall(QUERY_PAGE_DYNAMICS, jArray.toString())
             } catch (e: Exception) {
                 // Log.i(TAG, "rpcCall_CanCollectEnergy err: " + Log.getStackTraceString(e));
@@ -270,17 +279,12 @@ class AliMobileAutoCollectEnergyUtils {
                         val canHelpCollect = jsonObject.optBoolean("canHelpCollect")
                         val userId = jsonObject.optString("userId")
                         if (!friendsWhiteListId.contains(userId)) {
-                            val collectLaterTime = jsonObject.optLong("canCollectLaterTime")
-                            if (collectLaterTime != -1L && mostRecentCollectTime > collectLaterTime) {
-                                mostRecentCollectTime = collectLaterTime
-                                //                            Log.i(TAG, "most recent collect time change: " + mostRecentCollectTime);
-                            }
                             val data =
                                 CollectData(
                                     userId,
                                     canCollect,
                                     canHelpCollect,
-                                    collectLaterTime != -1L
+                                    jsonObject.optLong("canCollectLaterTime") != -1L
                                 )
                             if ((canCollect || canHelpCollect) && !collectData.contains(data)) {
                                 collectData.add(data)
@@ -298,8 +302,10 @@ class AliMobileAutoCollectEnergyUtils {
 
         private fun parseResponseData(resp: Any): String {
             try {
-                val method = resp.javaClass.getMethod("getResponse", *arrayOf())
-                return method.invoke(resp, *arrayOf()) as String
+                val method = resp.javaClass.getMethod("getResponse")
+                val response = method.invoke(resp) as String
+//                Log.d(TAG, "response:$response")
+                return response
             } catch (e: NoSuchMethodException) {
                 e.printStackTrace()
             } catch (e: IllegalAccessException) {
@@ -317,8 +323,8 @@ class AliMobileAutoCollectEnergyUtils {
                     ctxRef!!.get()!!.classLoader.loadClass("com.alibaba.fastjson.JSONObject")
                 val obj = jsonClazz.newInstance()
                 rpcCallMethod!!.invoke(
-                    null, funcName, jsonArrayString,
-                    "", true, obj, null, false, curH5PageImpl, 0, "", false, -1, ""
+                    null, funcName, jsonArrayString, "", true, obj, null, false,
+                    curH5PageImpl, 0, "", false, -1, ""
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -334,13 +340,14 @@ class AliMobileAutoCollectEnergyUtils {
          */
         private fun rpcCall_HelpCollectEnergy(userId: String, bubbleId: Long) {
             try {
-                val jsonArray = JSONArray()
-                val bubbleAry = JSONArray()
-                bubbleAry.put(bubbleId)
-                val json = JSONObject()
-                json.put("targetUserId", userId)
-                json.put("bubbleIds", bubbleAry)
-                jsonArray.put(json)
+                val jsonArray = JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("targetUserId", userId)
+                        put("bubbleIds", JSONArray().apply {
+                            put(bubbleId)
+                        })
+                    })
+                }
                 // Log.i(TAG, "call HelpCollectEnergy energy params:" + jsonArray);
 
                 rpcCall(HELP_COLLECT_ENERGY, jsonArray.toString())
@@ -358,13 +365,14 @@ class AliMobileAutoCollectEnergyUtils {
          */
         private fun rpcCall_CollectEnergy(userId: String, bubbleId: Long) {
             try {
-                val jsonArray = JSONArray()
-                val bubbleAry = JSONArray()
-                bubbleAry.put(bubbleId)
-                val json = JSONObject()
-                json.put("userId", userId)
-                json.put("bubbleIds", bubbleAry)
-                jsonArray.put(json)
+                val jsonArray = JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("userId", userId)
+                        put("bubbleIds", JSONArray().apply {
+                            put(bubbleId)
+                        })
+                    })
+                }
                 // Log.i(TAG, "call rpcCall_CollectEnergy energy params:" + jsonArray);
 
                 rpcCall(COLLECT_ENERGY, jsonArray.toString())
@@ -508,6 +516,10 @@ class AliMobileAutoCollectEnergyUtils {
                 } else {
                     false
                 }
+            }
+
+            override fun hashCode(): Int {
+                return collectUserId.hashCode()
             }
         }
     }

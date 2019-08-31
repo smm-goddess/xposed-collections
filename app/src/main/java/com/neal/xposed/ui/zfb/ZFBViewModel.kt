@@ -11,7 +11,7 @@ import androidx.lifecycle.ViewModel
 class ZFBViewModel : ViewModel() {
 
     private val _text = MutableLiveData<String>().apply {
-        value = "ZFB Hook Module Settings"
+        value = "支付宝Hook模块设置项"
     }
     private val _interval = MutableLiveData<Long>()
     private val _autoCollectIntervalOpen = MutableLiveData<Boolean>()
@@ -26,9 +26,14 @@ class ZFBViewModel : ViewModel() {
         val uri =
             Uri.parse("content://com.neal.xposed.preference/xposed_settings?key=auto_collect_interval")
         val cursor = ctx.contentResolver.query(uri, null, null, null, null)
-        cursor?.moveToFirst()
+
         _interval.apply {
-            value = (cursor?.getLong(cursor.getColumnIndex("value")) ?: 2000) / 1000
+            value = if (cursor?.count ?: 0 > 0) {
+                cursor?.moveToFirst()
+                (cursor?.getLong(cursor.getColumnIndex("value")) ?: 2000) / 1000
+            } else {
+                20
+            }
         }
         cursor?.close()
     }
@@ -58,7 +63,7 @@ class ZFBViewModel : ViewModel() {
                 cursor.getString(cursor.getColumnIndex("value"))?.toBoolean() ?: true
             }
         }
-        cursor.close()
+        cursor?.close()
         this.updateInterval(ctx)
     }
 
@@ -80,11 +85,14 @@ class ZFBViewModel : ViewModel() {
         }
     }
 
-    fun intervalCollect(ctx: Context, isChecked: Boolean) {
+    private fun tryToggle(
+        ctx: Context,
+        isChecked: Boolean,
+        values: ContentValues,
+        liveData: MutableLiveData<Boolean>
+    ) {
         val uri = Uri.parse("content://com.neal.xposed.preference/xposed_settings")
-        val values = ContentValues()
-        values.put("auto_collect_interval_open", isChecked)
-        _autoCollectIntervalOpen.apply {
+        liveData.apply {
             value = if (ctx.contentResolver.update(uri, values, null, null) < 0) {
                 !isChecked
             } else {
@@ -93,17 +101,16 @@ class ZFBViewModel : ViewModel() {
         }
     }
 
+    fun intervalCollect(ctx: Context, isChecked: Boolean) {
+        tryToggle(ctx, isChecked, ContentValues().apply {
+            put("auto_collect_interval_open", isChecked)
+        }, _autoCollectIntervalOpen)
+    }
+
     fun autoCollect(ctx: Context, isChecked: Boolean) {
-        val uri = Uri.parse("content://com.neal.xposed.preference/xposed_settings")
-        val values = ContentValues()
-        values.put("auto_collect_open", isChecked)
-        _autoCollectOpen.apply {
-            value = if (ctx.contentResolver.update(uri, values, null, null) < 0) {
-                !isChecked
-            } else {
-                isChecked
-            }
-        }
+        tryToggle(ctx, isChecked, ContentValues().apply {
+            put("auto_collect_open", isChecked)
+        }, _autoCollectOpen)
     }
 
 }
