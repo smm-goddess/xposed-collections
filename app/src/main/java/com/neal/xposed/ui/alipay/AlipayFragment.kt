@@ -1,4 +1,4 @@
-package com.neal.xposed.ui.zfb
+package com.neal.xposed.ui.alipay
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -12,57 +12,52 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.neal.xposed.R
 
-class ZFBFragment : Fragment() {
+class AlipayFragment : Fragment() {
 
-    private lateinit var zfbViewModel: ZFBViewModel
+    private lateinit var alipayViewModel: AlipayViewModel
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        zfbViewModel =
-            ViewModelProviders.of(this).get(ZFBViewModel::class.java)
-        val root = inflater.inflate(R.layout.fragment_gallery, container, false)
-        val textView: AppCompatTextView = root.findViewById(R.id.text_gallery)
+        alipayViewModel =
+            ViewModelProviders.of(this).get(AlipayViewModel::class.java)
+        val root = inflater.inflate(R.layout.fragment_alipay, container, false)
         val plus5: AppCompatButton = root.findViewById(R.id.plus5)
         val minus5: AppCompatButton = root.findViewById(R.id.minus5)
         val autoCollectOpen: SwitchCompat = root.findViewById(R.id.autoCollectOpen)
         val autoCollectInterval: AppCompatTextView = root.findViewById(R.id.autoCollectInterval)
         val autoCollectIntervalOpen: SwitchCompat = root.findViewById(R.id.autoCollectIntervalOpen)
 
-        zfbViewModel.autoCollectOpen.observe(this, Observer {
+        alipayViewModel.autoCollectOpen.observe(this, Observer {
             autoCollectOpen.isChecked = it
         })
 
         autoCollectOpen.setOnCheckedChangeListener { _, isChecked ->
-            zfbViewModel.autoCollect(context!!, isChecked)
+            alipayViewModel.autoCollect(context!!, isChecked)
         }
 
-        zfbViewModel.text.observe(this, Observer {
-            textView.text = it
+        alipayViewModel.interval.observe(this, Observer {
+            autoCollectInterval.text = "循环时间间隔: ${it}s"
         })
 
-        zfbViewModel.interval.observe(this, Observer {
-            autoCollectInterval.text = "时间间隔: ${it}s"
-        })
-
-        zfbViewModel.autoCollectIntervalOpen.observe(this, Observer {
+        alipayViewModel.autoCollectIntervalOpen.observe(this, Observer {
             autoCollectIntervalOpen.isChecked = it
         })
 
         autoCollectIntervalOpen.setOnCheckedChangeListener { _, isChecked ->
-            zfbViewModel.intervalCollect(context!!, isChecked)
+            alipayViewModel.intervalCollect(context!!, isChecked)
         }
 
         plus5.setOnClickListener {
-            zfbViewModel.plus5Seconds(context!!)
+            alipayViewModel.plus5Seconds(context!!)
 
         }
         minus5.setOnClickListener {
-            zfbViewModel.minus5Seconds(context!!)
+            alipayViewModel.minus5Seconds(context!!)
         }
-        zfbViewModel.setup(context!!)
+        alipayViewModel.setup(context!!)
         return root
     }
 

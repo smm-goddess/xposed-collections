@@ -1,4 +1,4 @@
-package com.neal.xposed.ui.zfb
+package com.neal.xposed.ui.alipay
 
 import android.content.ContentValues
 import android.content.Context
@@ -8,16 +8,12 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
-class ZFBViewModel : ViewModel() {
+class AlipayViewModel : ViewModel() {
 
-    private val _text = MutableLiveData<String>().apply {
-        value = "支付宝Hook模块设置项"
-    }
     private val _interval = MutableLiveData<Long>()
     private val _autoCollectIntervalOpen = MutableLiveData<Boolean>()
     private val _autoCollectOpen = MutableLiveData<Boolean>()
 
-    val text: LiveData<String> = _text
     val interval: LiveData<Long> = _interval
     val autoCollectIntervalOpen: LiveData<Boolean> = _autoCollectIntervalOpen
     val autoCollectOpen: LiveData<Boolean> = _autoCollectOpen

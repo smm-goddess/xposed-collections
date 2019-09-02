@@ -1,13 +1,13 @@
-package com.neal.xposed.ui.home
+package com.neal.xposed.ui.wechat
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
-class HomeViewModel : ViewModel() {
+class WechatViewModel : ViewModel() {
 
     private val _text = MutableLiveData<String>().apply {
-        value = "This is home Fragment"
+        value = "徽信模块设置"
     }
     val text: LiveData<String> = _text
 }
