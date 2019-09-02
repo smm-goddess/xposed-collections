@@ -1,15 +1,15 @@
-package com.neal.xposed.zfb
+package com.neal.xposed.alipay
 
 import android.content.Context
 import android.os.Bundle
-import com.neal.xposed.zfb.collectenergy.AliMobileAutoCollectEnergyUtils
+import com.neal.xposed.alipay.collectenergy.AliMobileAutoCollectEnergyUtils
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedHelpers
 import java.lang.ref.WeakReference
 
 class ApplicationAttachMethodHook : XC_MethodHook() {
     companion object {
-        var TAG: String = "XposedHookZFB"
+        var TAG: String = "XposedHookAlipay"
     }
 
     @Throws(Throwable::class)

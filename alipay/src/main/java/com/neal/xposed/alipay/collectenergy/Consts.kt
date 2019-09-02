@@ -1,4 +1,4 @@
-package com.neal.xposed.zfb.collectenergy
+package com.neal.xposed.alipay.collectenergy
 
 internal const val QUERY_FRIEND_RANKING = "alipay.antmember.forest.h5.queryEnergyRanking"
 internal const val QUERY_FRIEND_ACTION = "alipay.antmember.forest.h5.queryNextAction"

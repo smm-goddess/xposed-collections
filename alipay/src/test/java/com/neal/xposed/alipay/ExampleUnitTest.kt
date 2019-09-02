@@ -1,4 +1,4 @@
-package com.neal.xposed.zfb
+package com.neal.xposed.alipay
 
 import org.junit.Test
 

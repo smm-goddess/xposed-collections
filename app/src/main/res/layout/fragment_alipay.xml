@@ -29,6 +29,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/text_ant_forest"
+            android:layout_marginTop="3dp"
             android:text="@string/auto_collect_open"
             android:textOff="关"
             android:textOn="开" />
@@ -38,6 +39,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/autoCollectOpen"
+            android:layout_marginTop="3dp"
             android:text="白名单"
             android:textOff="关"
             android:textOn="开" />
@@ -47,6 +49,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/autoCollectWhitelist"
+            android:layout_marginTop="3dp"
             android:text="@string/auto_cycle"
             android:textOff="关"
             android:textOn="开" />
@@ -56,6 +59,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@+id/autoCollectIntervalOpen"
+            android:layout_marginTop="3dp"
             android:text="循环时间间隔: 20s"
             android:textColor="#000" />
 
@@ -64,6 +68,7 @@
             android:layout_width="60dp"
             android:layout_height="30dp"
             android:layout_below="@+id/autoCollectInterval"
+            android:layout_marginTop="5dp"
             android:background="@drawable/button"
             android:text="-5S"
             android:textSize="13sp" />
@@ -73,8 +78,9 @@
             android:layout_width="60dp"
             android:layout_height="30dp"
             android:layout_below="@+id/autoCollectInterval"
-            android:layout_marginLeft="10dp"
-            android:layout_toRightOf="@id/minus5"
+            android:layout_marginStart="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_toEndOf="@id/minus5"
             android:background="@drawable/button"
             android:text="+5S"
             android:textSize="13sp" />
@@ -105,6 +111,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@id/text_ant_garden"
+            android:layout_marginTop="3dp"
             android:text="@string/auto_feed_open"
             android:textOff="关"
             android:textOn="开" />

@@ -15,7 +15,7 @@ class AlipayViewModel : ViewModel() {
     private val _autoCollectOpen = MutableLiveData<Boolean>()
     private val _autoCollectWhitelist = MutableLiveData<Boolean>()
     private val _autoFeed = MutableLiveData<Boolean>()
-    private val TAG = "XposedHookZFB"
+    private val TAG = "XposedHookAlipay"
 
     val interval: LiveData<Long> = _interval
     val autoCollectIntervalOpen: LiveData<Boolean> = _autoCollectIntervalOpen

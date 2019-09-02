@@ -6,7 +6,7 @@
     <group android:checkableBehavior="single">
 
         <item
-            android:id="@+id/nav_zfb"
+            android:id="@+id/nav_alipay"
             android:icon="@drawable/ic_menu_alipay"
             android:title="@string/menu_gallery" />
 

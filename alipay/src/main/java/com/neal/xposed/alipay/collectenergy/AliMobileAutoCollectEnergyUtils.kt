@@ -1,4 +1,4 @@
-package com.neal.xposed.zfb.collectenergy
+package com.neal.xposed.alipay.collectenergy
 
 import android.app.Activity
 import android.content.Context
@@ -19,7 +19,7 @@ import java.util.*
 class AliMobileAutoCollectEnergyUtils {
     companion object {
         private val simpleDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)
-        private val TAG = "XposedHookZFB"
+        private val TAG = "XposedHookAlipay"
         private val friendsWhiteListId = object : ArrayList<String>() {
             init {
                 add("2088032707539521")
