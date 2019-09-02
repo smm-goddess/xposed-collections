@@ -29,35 +29,57 @@ class AlipayFragment : Fragment() {
         val autoCollectOpen: SwitchCompat = root.findViewById(R.id.autoCollectOpen)
         val autoCollectInterval: AppCompatTextView = root.findViewById(R.id.autoCollectInterval)
         val autoCollectIntervalOpen: SwitchCompat = root.findViewById(R.id.autoCollectIntervalOpen)
+        val autoCollectWhitelist: SwitchCompat = root.findViewById(R.id.autoCollectWhitelist)
+        val autoFeed: SwitchCompat = root.findViewById(R.id.autoFeed)
 
-        alipayViewModel.autoCollectOpen.observe(this, Observer {
-            autoCollectOpen.isChecked = it
-        })
+        context?.apply {
+            val lifecycleOwner = this@AlipayFragment
+            val ctx = this
+            alipayViewModel.autoCollectOpen.observe(lifecycleOwner, Observer {
+                autoCollectOpen.isChecked = it
+            })
 
-        autoCollectOpen.setOnCheckedChangeListener { _, isChecked ->
-            alipayViewModel.autoCollect(context!!, isChecked)
+            autoCollectOpen.setOnCheckedChangeListener { _, isChecked ->
+                alipayViewModel.autoCollect(ctx, isChecked)
+            }
+
+            alipayViewModel.interval.observe(lifecycleOwner, Observer {
+                autoCollectInterval.text = "循环时间间隔: ${it}s"
+            })
+
+            alipayViewModel.autoCollectWhitelist.observe(lifecycleOwner, Observer {
+                autoCollectWhitelist.isChecked = it
+            })
+
+            autoCollectWhitelist.setOnCheckedChangeListener { _, isChecked ->
+                alipayViewModel.autoCollectWhitelist(ctx, isChecked)
+            }
+
+            alipayViewModel.autoFeed.observe(lifecycleOwner, Observer {
+                autoFeed.isChecked = it
+            })
+
+            autoFeed.setOnCheckedChangeListener { _, isChecked ->
+                alipayViewModel.autoFeed(ctx, isChecked)
+            }
+
+            alipayViewModel.autoCollectIntervalOpen.observe(lifecycleOwner, Observer {
+                autoCollectIntervalOpen.isChecked = it
+            })
+
+            autoCollectIntervalOpen.setOnCheckedChangeListener { _, isChecked ->
+                alipayViewModel.intervalCollect(ctx, isChecked)
+            }
+
+            plus5.setOnClickListener {
+                alipayViewModel.plus5Seconds(ctx)
+
+            }
+            minus5.setOnClickListener {
+                alipayViewModel.minus5Seconds(ctx)
+            }
+            alipayViewModel.setup(ctx)
         }
-
-        alipayViewModel.interval.observe(this, Observer {
-            autoCollectInterval.text = "循环时间间隔: ${it}s"
-        })
-
-        alipayViewModel.autoCollectIntervalOpen.observe(this, Observer {
-            autoCollectIntervalOpen.isChecked = it
-        })
-
-        autoCollectIntervalOpen.setOnCheckedChangeListener { _, isChecked ->
-            alipayViewModel.intervalCollect(context!!, isChecked)
-        }
-
-        plus5.setOnClickListener {
-            alipayViewModel.plus5Seconds(context!!)
-
-        }
-        minus5.setOnClickListener {
-            alipayViewModel.minus5Seconds(context!!)
-        }
-        alipayViewModel.setup(context!!)
         return root
     }
 

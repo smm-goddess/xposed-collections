@@ -34,10 +34,19 @@
             android:textOn="开" />
 
         <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/autoCollectIntervalOpen"
+            android:id="@+id/autoCollectWhitelist"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/autoCollectOpen"
+            android:text="白名单"
+            android:textOff="关"
+            android:textOn="开" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/autoCollectIntervalOpen"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/autoCollectWhitelist"
             android:text="@string/auto_cycle"
             android:textOff="关"
             android:textOn="开" />
@@ -70,14 +79,6 @@
             android:text="+5S"
             android:textSize="13sp" />
 
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/autoCollectWhitelist"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/minus5"
-            android:text="白名单"
-            android:textOff="关"
-            android:textOn="开" />
     </RelativeLayout>
 
     <RelativeLayout
